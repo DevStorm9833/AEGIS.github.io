@@ -18,9 +18,7 @@
             --warning-amber: #f59e0b;
         }
 
-        body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: #f8fafc; overflow: hidden; transition: background 0.3s ease; }
-        body.light-mode { --bg-dark: #f1f5f9; --panel-bg: rgba(255, 255, 255, 0.9); color: #1e293b; }
-        
+        body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: #f8fafc; overflow: hidden; }
         .mono { font-family: 'JetBrains Mono', monospace; }
 
         .glass-panel {
@@ -28,14 +26,12 @@
             backdrop-filter: blur(16px);
             border: 1px solid rgba(56, 189, 248, 0.1);
         }
-        .light-mode .glass-panel { border-color: rgba(15, 23, 42, 0.1); }
 
         .glass-card {
             background: rgba(30, 41, 59, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.2s ease;
         }
-        .light-mode .glass-card { background: rgba(203, 213, 225, 0.4); border-color: rgba(15, 23, 42, 0.05); }
 
         /* Status Dot Animations */
         @keyframes pulse-critical {
@@ -47,7 +43,7 @@
         .dot-amber { background: #f59e0b; }
         .dot-green { background: #22c55e; }
 
-        #map { height: 100%; width: 100%; z-index: 1; background: #010409; }
+        #map { height: 100%; width: 100%; z-index: 1; }
 
         /* Custom Scrollbar */
         .scrollbar-aegis::-webkit-scrollbar { width: 4px; }
@@ -68,14 +64,6 @@
         }
         .ai-bubble { background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.2); align-self: flex-start; }
         .user-bubble { background: #0ea5e9; color: white; align-self: flex-end; }
-
-        .time-slider {
-            -webkit-appearance: none;
-            width: 100%; height: 4px; border-radius: 5px; background: rgba(56, 189, 248, 0.2);
-        }
-        .time-slider::-webkit-slider-thumb {
-            -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #38bdf8; cursor: pointer;
-        }
     </style>
 </head>
 <body class="flex flex-col h-screen">
@@ -87,15 +75,12 @@
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             </div>
             <div>
-                <h1 class="text-xs md:text-sm font-bold tracking-widest uppercase">AEGIS Intelligence</h1>
+                <h1 class="text-xs md:text-sm font-bold tracking-widest text-white uppercase">AEGIS Intelligence</h1>
                 <p class="text-[0.6rem] text-sky-400 font-medium uppercase tracking-[0.2em] hidden md:block">Autonomous Environmental Monitoring</p>
             </div>
         </div>
 
         <div class="flex items-center gap-2 md:gap-4">
-            <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-white/10 transition" title="Toggle Theme">
-                <svg id="theme-icon" class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-            </button>
             <div class="hidden lg:flex items-center gap-4 px-4 border-x border-white/5">
                 <div class="text-right">
                     <p class="text-[0.6rem] text-slate-500 uppercase font-bold">Global Anomaly</p>
@@ -106,7 +91,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                 <span class="hidden sm:inline">COMMAND</span>
             </button>
-            <button class="md:hidden" onclick="toggleSidebar('left')">
+            <button class="md:hidden text-white" onclick="toggleSidebar('left')">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
             </button>
         </div>
@@ -124,10 +109,6 @@
                 <!-- Zones rendered here -->
             </div>
             <div class="p-4 border-t border-white/5">
-                <button onclick="toggleDrawMode()" id="draw-btn" class="w-full mb-3 py-2 bg-slate-800 hover:bg-slate-700 text-[0.6rem] font-bold text-white rounded border border-white/5 flex items-center justify-center gap-2 transition">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                    DEFINE CUSTOM ZONE
-                </button>
                 <div class="glass-card rounded-xl p-3">
                     <p class="text-[0.6rem] font-bold text-slate-500 mb-2 uppercase">Anomaly Intensity</p>
                     <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -141,21 +122,6 @@
         <main class="flex-1 relative flex flex-col">
             <div id="map"></div>
             
-            <!-- Map Tools (Bottom Left) -->
-            <div class="absolute bottom-6 left-6 z-[1000] hidden md:flex flex-col gap-4">
-                <div class="glass-panel p-4 rounded-2xl w-80">
-                    <div class="flex items-center justify-between mb-3">
-                        <span id="time-label" class="text-[0.65rem] font-bold text-sky-400 uppercase">Current Data</span>
-                        <span id="time-val" class="text-[0.65rem] font-mono text-slate-400">T-0 Hours</span>
-                    </div>
-                    <input type="range" min="0" max="30" value="0" class="time-slider" oninput="handleTimeTravel(this.value)">
-                    <div class="flex justify-between mt-2">
-                        <span class="text-[0.5rem] text-slate-500">-30D</span>
-                        <span class="text-[0.5rem] text-slate-500">REALTIME</span>
-                    </div>
-                </div>
-            </div>
-
             <!-- Mobile Toggle Buttons -->
             <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-[1000] md:hidden">
                 <button onclick="toggleSidebar('left')" class="bg-slate-900/90 border border-white/10 px-4 py-2 rounded-full text-[0.65rem] font-bold text-white">ZONES</button>
@@ -166,15 +132,12 @@
             <div class="absolute top-4 right-4 z-[1000] hidden lg:flex flex-col gap-4 w-80 pointer-events-none">
                 <div class="glass-panel p-4 rounded-xl pointer-events-auto">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-[0.65rem] font-bold uppercase tracking-wider">AI Intelligence Summary</h3>
+                        <h3 class="text-[0.65rem] font-bold text-white uppercase tracking-wider">AI Intelligence Summary</h3>
                         <span class="text-[0.5rem] bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded">SYNTHESIS</span>
                     </div>
                     <p id="ai-summary" class="text-[0.7rem] text-slate-300 leading-relaxed italic">"Analyzing global trends... Detecting multi-signal drift in mangrove sectors."</p>
                 </div>
                 <div class="glass-panel p-4 rounded-xl pointer-events-auto">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-[0.65rem] font-bold uppercase tracking-wider">Parameter Matrix</h3>
-                    </div>
                     <canvas id="trendChart" height="180"></canvas>
                 </div>
             </div>
@@ -189,12 +152,6 @@
             <div id="alert-list" class="flex-1 overflow-y-auto scrollbar-aegis p-4 space-y-4">
                 <!-- Alerts rendered here -->
             </div>
-            <div class="p-4 bg-slate-900/30">
-                <button onclick="exportSituationReport()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-[0.65rem] font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    GENERATE SITUATION REPORT
-                </button>
-            </div>
         </aside>
     </div>
 
@@ -202,7 +159,7 @@
     <div id="queryPanel" class="fixed top-0 right-0 bottom-0 w-full sm:w-[450px] glass-panel border-l border-white/10 z-[100] transform translate-x-full transition-transform duration-500 flex flex-col shadow-2xl">
         <div class="p-6 border-b border-white/5 flex items-center justify-between">
             <div>
-                <h2 class="text-sm font-bold tracking-widest uppercase">AEGIS Command</h2>
+                <h2 class="text-sm font-bold text-white tracking-widest uppercase">AEGIS Command</h2>
                 <p class="text-[0.6rem] text-sky-400 font-mono tracking-tighter">ENVIRONMENTAL INTELLIGENCE AGENT</p>
             </div>
             <button onclick="toggleQueryPanel()" class="text-slate-400 hover:text-white">
@@ -252,9 +209,6 @@
 
         let map, trendChart, zoneData = {};
         let sidebars = { left: false, right: false };
-        let drawMode = false;
-        let timeOffset = 0;
-        let markers = {};
 
         // ============ INITIALIZATION ============
         window.onload = function() {
@@ -270,25 +224,8 @@
         };
 
         function initMap() {
-            // LOCKING THE MAP: WorldCopyJump false and maxBounds
-            const bounds = L.latLngBounds(L.latLng(-85, -180), L.latLng(85, 180));
-            
-            map = L.map('map', { 
-                center: [15, 80], 
-                zoom: 3, 
-                minZoom: 2,
-                maxZoom: 12,
-                zoomControl: false, 
-                attributionControl: false,
-                worldCopyJump: false,
-                maxBounds: bounds,
-                maxBoundsViscosity: 1.0
-            });
-
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                noWrap: true, // PREVENTS STRIPPING
-                bounds: bounds
-            }).addTo(map);
+            map = L.map('map', { center: [15, 80], zoom: 3, zoomControl: false, attributionControl: false });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
             ZONES.forEach(zone => {
                 const icon = L.divIcon({
@@ -296,25 +233,24 @@
                     html: `<div id="marker-${zone.id}" class="status-dot dot-green w-3 h-3 rounded-full border border-white/20"></div>`,
                     iconSize: [12, 12]
                 });
-                const marker = L.marker([zone.lat, zone.lng], { icon }).addTo(map)
+                L.marker([zone.lat, zone.lng], { icon }).addTo(map)
                     .bindPopup(`<div class="p-2 text-xs text-slate-800"><b>${zone.name}</b><br>${zone.type}</div>`);
-                markers[zone.id] = marker;
             });
-
-            map.on('click', onMapClick);
         }
 
         function initCharts() {
             const ctx = document.getElementById('trendChart').getContext('2d');
             trendChart = new Chart(ctx, {
-                type: 'bar',
+                type: 'line',
                 data: {
-                    labels: ['SST', 'CHL', 'SAL', 'OXY', 'pH'],
+                    labels: ['-30d', '-20d', '-10d', '-5d', '-2d', 'NOW'],
                     datasets: [{
-                        label: 'Deviation',
-                        data: [12, 15, 14, 25, 10],
-                        backgroundColor: '#0ea5e9',
-                        borderRadius: 4
+                        label: 'Intensity',
+                        data: [12, 15, 14, 25, 42, 58],
+                        borderColor: '#0ea5e9',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        fill: true,
+                        tension: 0.4
                     }]
                 },
                 options: {
@@ -333,11 +269,11 @@
             ZONES.forEach(z => {
                 zoneData[z.id] = {
                     history: {
-                        sst: Array.from({length: 60}, (_, i) => z.baseline + (Math.random() - 0.5) * 2 + (i > 55 ? 2.5 : 0)),
-                        chl: Array.from({length: 60}, (_, i) => 5 + Math.random() * 5 + (i > 50 ? 10 : 0)),
-                        salinity: Array.from({length: 60}, () => 35 + Math.random()),
-                        oxygen: Array.from({length: 60}, () => 6 + Math.random()),
-                        ph: Array.from({length: 60}, () => 8.1 + (Math.random() - 0.5) * 0.1)
+                        sst: Array.from({length: 30}, (_, i) => z.baseline + (Math.random() - 0.5) * 2 + (i > 25 ? 2 : 0)),
+                        chl: Array.from({length: 30}, (_, i) => 5 + Math.random() * 5 + (i > 20 ? 8 : 0)),
+                        salinity: Array.from({length: 30}, () => 35 + Math.random()),
+                        oxygen: Array.from({length: 30}, () => 6 + Math.random()),
+                        ph: Array.from({length: 30}, () => 8.1 + (Math.random() - 0.5) * 0.1)
                     }
                 };
             });
@@ -346,7 +282,6 @@
         // ============ AI ENGINE LOGIC ============
         function processIntelligence() {
             const rankedAnomalies = [];
-            const dataIndex = 59 - parseInt(timeOffset);
             
             ZONES.forEach(zone => {
                 const data = zoneData[zone.id].history;
@@ -355,14 +290,15 @@
 
                 Object.keys(SIGNAL_METRICS).forEach(sig => {
                     const series = data[sig];
-                    const current = series[dataIndex];
-                    const prevAvg = series.slice(0, dataIndex - 5).reduce((a,b) => a+b, 0) / (dataIndex - 5 || 1);
+                    const current = series[series.length - 1];
+                    const prevAvg = series.slice(0, 25).reduce((a,b) => a+b, 0) / 25;
                     const deviation = current - prevAvg;
-                    const magnitude = Math.abs(deviation) / (prevAvg * 0.1);
+                    const magnitude = Math.abs(deviation) / (prevAvg * 0.1); // Normalize
                     
-                    const recency = 1.0; 
-                    const trend = deviation > 0 ? 1.0 : 0.5;
+                    const recency = 1.0; // Simulated
+                    const trend = deviation > 0 ? 1.0 : 0.5; // Warming/Increase weighted higher
                     
+                    // FORMULA: Priority = (R*0.3) + (M*0.4) + (T*0.2) + (H*0.1)
                     const pScore = (recency * 0.3) + (Math.min(1, magnitude) * 0.4) + (trend * 0.2) + (zone.importance * 0.1);
                     scores[sig] = pScore;
                     if (pScore > 0.6) converging++;
@@ -378,7 +314,6 @@
             renderZoneUI(rankedAnomalies);
             renderAlertUI(rankedAnomalies);
             updateGlobalStats(rankedAnomalies);
-            updateParameterChart(rankedAnomalies[0]); // Default to first zone for chart
         }
 
         function updateMapMarker(zoneId, tier) {
@@ -390,10 +325,10 @@
         function renderZoneUI(anomalies) {
             const container = document.getElementById('zone-list');
             container.innerHTML = anomalies.sort((a,b) => b.totalScore - a.totalScore).map(a => `
-                <div class="glass-card rounded-xl p-3 cursor-pointer group hover:bg-slate-800/60" onclick="focusOnZone('${a.zone.lat}', '${a.zone.lng}', '${a.zone.id}')">
+                <div class="glass-card rounded-xl p-3 cursor-pointer group hover:bg-slate-800/60" onclick="focusOnZone('${a.zone.lat}', '${a.zone.lng}')">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-[0.65rem] font-bold">${a.zone.name}</span>
-                        <span class="text-[0.6rem] mono ${a.tier === 1 ? 'text-red-400' : 'text-slate-500'}">${(a.totalScore * 100).toFixed(0)}% PRIO</span>
+                        <span class="text-[0.65rem] font-bold text-white">${a.zone.name}</span>
+                        <span class="text-[0.6rem] mono ${a.tier === 1 ? 'text-red-400' : 'text-slate-500'}">${(a.totalScore * 100).toFixed(0)}% PRIORITY</span>
                     </div>
                     <div class="flex gap-1">
                         <div class="h-1 flex-1 bg-slate-800 rounded-full overflow-hidden">
@@ -414,9 +349,9 @@
                         <span class="text-[0.6rem] font-bold text-slate-400 uppercase tracking-tighter">${a.zone.name}</span>
                         <span class="text-[0.55rem] mono ${a.tier === 1 ? 'text-red-400' : 'text-amber-400'}">TIER ${a.tier}</span>
                     </div>
-                    <h4 class="text-xs font-bold uppercase mb-2">${a.tier === 1 ? 'Convergent Crisis' : 'Monitoring Watch'}</h4>
+                    <h4 class="text-xs font-bold text-white uppercase mb-2">${a.tier === 1 ? 'Convergent Crisis' : 'Monitoring Watch'}</h4>
                     <p class="text-[0.65rem] text-slate-400 leading-relaxed mb-3">
-                        ${a.converging} converging signals detected. Significant drift in multiple parameters. Historical drift weighting is high.
+                        ${a.converging} converging signals detected. Significant drift in SST (+${(Math.random() * 3).toFixed(1)}°C) and Chlorophyll.
                     </p>
                     <div class="flex items-center justify-between pt-3 border-t border-white/5">
                         <span class="text-[0.6rem] font-bold text-sky-400">REC: DEPLOY SENSORS</span>
@@ -432,14 +367,7 @@
             document.getElementById('global-bar').style.width = avg + '%';
             
             const criticalCount = anomalies.filter(a => a.tier === 1).length;
-            document.getElementById('ai-summary').textContent = `System identifies ${criticalCount} critical convergences. ${timeOffset > 0 ? `Historical data showing persistent drift from ${timeOffset} days ago.` : 'Real-time drift detected in primary sectors.'}`;
-        }
-
-        function updateParameterChart(anomaly) {
-            if (!anomaly) return;
-            const values = Object.values(anomaly.scores).map(v => v * 100);
-            trendChart.data.datasets[0].data = values;
-            trendChart.update();
+            document.getElementById('ai-summary').textContent = `System identifies ${criticalCount} critical convergences. Sundarbans reporting ${criticalCount > 0 ? 'highest thermal persistence' : 'nominal drift'}.`;
         }
 
         // ============ INTERACTION HANDLERS ============
@@ -455,90 +383,9 @@
             panel.style.transform = isOpen ? 'translateX(100%)' : 'translateX(0%)';
         }
 
-        function focusOnZone(lat, lng, id) {
+        function focusOnZone(lat, lng) {
             map.flyTo([lat, lng], 6);
             if (window.innerWidth < 768) toggleSidebar('left');
-            // Update chart for specific zone
-            const dataIndex = 59 - parseInt(timeOffset);
-            // Simulate anomaly object for the chart update
-            processIntelligence(); 
-        }
-
-        function toggleTheme() {
-            document.body.classList.toggle('light-mode');
-            const icon = document.getElementById('theme-icon');
-            if (document.body.classList.contains('light-mode')) {
-                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M17.636 17.636l-.707-.707M6.364 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />';
-            } else {
-                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />';
-            }
-        }
-
-        function toggleDrawMode() {
-            drawMode = !drawMode;
-            document.getElementById('draw-btn').classList.toggle('bg-sky-600');
-            document.getElementById('draw-btn').classList.toggle('bg-slate-800');
-            document.getElementById('draw-btn').textContent = drawMode ? 'CLICK MAP TO MONITOR' : 'DEFINE CUSTOM ZONE';
-        }
-
-        function onMapClick(e) {
-            if (!drawMode) return;
-            const { lat, lng } = e.latlng;
-            const id = 'CUSTOM-' + Date.now();
-            const newZone = { id, name: 'User-Defined Area', lat, lng, type: 'Custom', baseline: 25.0, importance: 0.5 };
-            ZONES.push(newZone);
-            
-            // Generate data for new zone
-            zoneData[id] = {
-                history: {
-                    sst: Array.from({length: 60}, () => 25 + Math.random()),
-                    chl: Array.from({length: 60}, () => 5 + Math.random()),
-                    salinity: Array.from({length: 60}, () => 35),
-                    oxygen: Array.from({length: 60}, () => 6),
-                    ph: Array.from({length: 60}, () => 8.1)
-                }
-            };
-
-            const icon = L.divIcon({
-                className: 'custom-icon',
-                html: `<div id="marker-${id}" class="status-dot dot-green w-3 h-3 rounded-full border border-white/20"></div>`,
-                iconSize: [12, 12]
-            });
-            L.marker([lat, lng], { icon }).addTo(map)
-                .bindPopup(`<div class="p-2 text-xs text-slate-800"><b>${newZone.name}</b><br>Manual Monitor</div>`);
-            
-            toggleDrawMode();
-            processIntelligence();
-        }
-
-        function handleTimeTravel(val) {
-            timeOffset = val;
-            document.getElementById('time-val').textContent = val == 0 ? 'REALTIME' : `T-${val} Days`;
-            document.getElementById('time-label').textContent = val == 0 ? 'Current Data' : 'Historical Snapshot';
-            processIntelligence();
-        }
-
-        function exportSituationReport() {
-            const criticals = ZONES.filter(z => {
-                // Simplified check for export logic
-                return Math.random() > 0.8;
-            });
-            
-            const report = {
-                timestamp: new Date().toISOString(),
-                global_index: document.getElementById('global-idx').textContent,
-                monitored_zones: ZONES.length,
-                status: "CRITICAL",
-                summary: document.getElementById('ai-summary').textContent
-            };
-            
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(report, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "aegis_situation_report.json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
         }
 
         function handleQuery() {
@@ -568,9 +415,12 @@
         function getAIResponse(q) {
             const ql = q.toLowerCase();
             if (ql.includes('attention')) {
-                return `**SITUATIONAL AWARENESS REPORT:** <br><br> Analyzed ${ZONES.length} zones. High risk detected in Great Barrier Reef and Sundarbans. <br><br> Use the **Time Slider** to verify if this drift began more than 7 days ago.`;
+                return `**SITUATIONAL AWARENESS REPORT:** <br><br> 3 zones exceed confidence thresholds. <br> 1. **Sundarbans**: Tier 1 (Thermal accumulation +2.8°C). <br> 2. **Great Barrier**: Tier 2 (Chlorophyll spike). <br><br> Suppression logic has filtered 12 minor fluctuations.`;
             }
-            return `Command received. Querying database for ${ql}. All systems are active. Anomaly detection thresholds are currently set to 1.5σ.`;
+            if (ql.includes('sundarbans')) {
+                return `**Sundarbans Analysis:** <br> Primary anomaly is thermal accumulation persisting for 8 days. Magnitude is 2.4 SD above seasonal baseline. <br><br> **Recommendation:** Verify with in-situ sensors. Persistence suggests potential hypoxia event.`;
+            }
+            return `I've analyzed the multi-source signal state. Currently, the Global Anomaly Index is ${document.getElementById('global-idx').textContent}. Would you like a ranked breakdown of Tier 1 alerts?`;
         }
 
         function quickQuery(text) {
@@ -580,14 +430,18 @@
 
         function startSimulation() {
             setInterval(() => {
-                if (timeOffset == 0) {
-                    ZONES.forEach(z => {
-                        zoneData[z.id].history.sst.push(zoneData[z.id].history.sst[zoneData[z.id].history.sst.length-1] + (Math.random() - 0.5) * 0.5);
-                        zoneData[z.id].history.sst.shift();
-                    });
-                    processIntelligence();
-                }
-            }, 8000);
+                // Occasional fluctuations
+                ZONES.forEach(z => {
+                    zoneData[z.id].history.sst.push(z.baseline + (Math.random() - 0.5) * 3);
+                    zoneData[z.id].history.sst.shift();
+                });
+                processIntelligence();
+                
+                // Update chart randomly
+                trendChart.data.datasets[0].data.shift();
+                trendChart.data.datasets[0].data.push(30 + Math.random() * 40);
+                trendChart.update();
+            }, 5000);
         }
 
     </script>
