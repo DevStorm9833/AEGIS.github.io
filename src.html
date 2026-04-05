@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEGIS - Geospatial Intelligence Engine</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --panel-bg: rgba(15, 23, 42, 0.9);
+            --accent-blue: #38bdf8;
+            --critical-red: #ef4444;
+            --warning-amber: #f59e0b;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: #f8fafc; overflow: hidden; transition: background 0.3s ease; }
+        body.light-mode { --bg-dark: #f1f5f9; --panel-bg: rgba(255, 255, 255, 0.9); color: #1e293b; }
+        
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(56, 189, 248, 0.1);
+        }
+        .light-mode .glass-panel { border-color: rgba(15, 23, 42, 0.1); }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+        .light-mode .glass-card { background: rgba(203, 213, 225, 0.4); border-color: rgba(15, 23, 42, 0.05); }
+
+        /* Status Dot Animations */
+        @keyframes pulse-critical {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .dot-red { background: #ef4444; box-shadow: 0 0 10px #ef4444; animation: pulse-critical 2s infinite; }
+        .dot-amber { background: #f59e0b; }
+        .dot-green { background: #22c55e; }
+
+        #map { height: 100%; width: 100%; z-index: 1; background: #010409; }
+
+        /* Custom Scrollbar */
+        .scrollbar-aegis::-webkit-scrollbar { width: 4px; }
+        .scrollbar-aegis::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.2); border-radius: 10px; }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .mobile-hide { display: none !important; }
+            .mobile-overlay { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; height: 40vh; }
+        }
+
+        .alert-tier-1 { border-left: 4px solid var(--critical-red); background: rgba(239, 68, 68, 0.05); }
+        .alert-tier-2 { border-left: 4px solid var(--warning-amber); background: rgba(245, 158, 11, 0.05); }
+        .alert-tier-3 { border-left: 4px solid var(--accent-blue); background: rgba(56, 189, 248, 0.05); }
+
+        .query-bubble {
+            border-radius: 12px; padding: 12px; font-size: 0.85rem; margin-bottom: 8px; max-width: 90%;
+        }
+        .ai-bubble { background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.2); align-self: flex-start; }
+        .user-bubble { background: #0ea5e9; color: white; align-self: flex-end; }
+
+        .time-slider {
+            -webkit-appearance: none;
+            width: 100%; height: 4px; border-radius: 5px; background: rgba(56, 189, 248, 0.2);
+        }
+        .time-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #38bdf8; cursor: pointer;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <!-- Header -->
+    <nav class="h-14 md:h-16 glass-panel border-b border-white/5 flex items-center justify-between px-4 md:px-6 z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-sky-500 rounded flex items-center justify-center shadow-lg shadow-sky-500/20">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div>
+                <h1 class="text-xs md:text-sm font-bold tracking-widest uppercase">AEGIS Intelligence</h1>
+                <p class="text-[0.6rem] text-sky-400 font-medium uppercase tracking-[0.2em] hidden md:block">Autonomous Environmental Monitoring</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 md:gap-4">
+            <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-white/10 transition" title="Toggle Theme">
+                <svg id="theme-icon" class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            </button>
+            <div class="hidden lg:flex items-center gap-4 px-4 border-x border-white/5">
+                <div class="text-right">
+                    <p class="text-[0.6rem] text-slate-500 uppercase font-bold">Global Anomaly</p>
+                    <p id="global-idx" class="text-xs font-bold text-amber-400 mono">24.2%</p>
+                </div>
+            </div>
+            <button onclick="toggleQueryPanel()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[0.65rem] md:text-xs font-bold transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                <span class="hidden sm:inline">COMMAND</span>
+            </button>
+            <button class="md:hidden" onclick="toggleSidebar('left')">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <div class="flex-1 flex overflow-hidden relative">
+        
+        <!-- Left Sidebar: Watch-Zones -->
+        <aside id="sidebar-left" class="absolute inset-y-0 left-0 w-72 glass-panel border-r border-white/5 flex flex-col z-40 transform -translate-x-full md:translate-x-0 md:relative transition-transform duration-300">
+            <div class="p-4 flex items-center justify-between border-b border-white/5">
+                <span class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Active Watch-Zones</span>
+                <button class="md:hidden text-slate-400" onclick="toggleSidebar('left')">✕</button>
+            </div>
+            <div id="zone-list" class="flex-1 overflow-y-auto scrollbar-aegis p-2 space-y-2">
+                <!-- Zones rendered here -->
+            </div>
+            <div class="p-4 border-t border-white/5">
+                <button onclick="toggleDrawMode()" id="draw-btn" class="w-full mb-3 py-2 bg-slate-800 hover:bg-slate-700 text-[0.6rem] font-bold text-white rounded border border-white/5 flex items-center justify-center gap-2 transition">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    DEFINE CUSTOM ZONE
+                </button>
+                <div class="glass-card rounded-xl p-3">
+                    <p class="text-[0.6rem] font-bold text-slate-500 mb-2 uppercase">Anomaly Intensity</p>
+                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div id="global-bar" class="bg-sky-400 h-full transition-all duration-1000" style="width: 24%"></div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Map Container -->
+        <main class="flex-1 relative flex flex-col">
+            <div id="map"></div>
+            
+            <!-- Map Tools (Bottom Left) -->
+            <div class="absolute bottom-6 left-6 z-[1000] hidden md:flex flex-col gap-4">
+                <div class="glass-panel p-4 rounded-2xl w-80">
+                    <div class="flex items-center justify-between mb-3">
+                        <span id="time-label" class="text-[0.65rem] font-bold text-sky-400 uppercase">Current Data</span>
+                        <span id="time-val" class="text-[0.65rem] font-mono text-slate-400">T-0 Hours</span>
+                    </div>
+                    <input type="range" min="0" max="30" value="0" class="time-slider" oninput="handleTimeTravel(this.value)">
+                    <div class="flex justify-between mt-2">
+                        <span class="text-[0.5rem] text-slate-500">-30D</span>
+                        <span class="text-[0.5rem] text-slate-500">REALTIME</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Toggle Buttons -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-[1000] md:hidden">
+                <button onclick="toggleSidebar('left')" class="bg-slate-900/90 border border-white/10 px-4 py-2 rounded-full text-[0.65rem] font-bold text-white">ZONES</button>
+                <button onclick="toggleSidebar('right')" class="bg-slate-900/90 border border-white/10 px-4 py-2 rounded-full text-[0.65rem] font-bold text-white">ALERTS</button>
+            </div>
+
+            <!-- Analysis Overlays (Desktop) -->
+            <div class="absolute top-4 right-4 z-[1000] hidden lg:flex flex-col gap-4 w-80 pointer-events-none">
+                <div class="glass-panel p-4 rounded-xl pointer-events-auto">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-[0.65rem] font-bold uppercase tracking-wider">AI Intelligence Summary</h3>
+                        <span class="text-[0.5rem] bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded">SYNTHESIS</span>
+                    </div>
+                    <p id="ai-summary" class="text-[0.7rem] text-slate-300 leading-relaxed italic">"Analyzing global trends... Detecting multi-signal drift in mangrove sectors."</p>
+                </div>
+                <div class="glass-panel p-4 rounded-xl pointer-events-auto">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-[0.65rem] font-bold uppercase tracking-wider">Parameter Matrix</h3>
+                    </div>
+                    <canvas id="trendChart" height="180"></canvas>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar: Alerts -->
+        <aside id="sidebar-right" class="absolute inset-y-0 right-0 w-80 lg:w-96 glass-panel border-l border-white/5 flex flex-col z-40 transform translate-x-full md:translate-x-0 md:relative transition-transform duration-300">
+            <div class="flex border-b border-white/5">
+                <button class="flex-1 py-4 text-[0.65rem] font-bold tracking-widest uppercase text-sky-400 border-b-2 border-sky-400 bg-sky-400/5">Prioritized Alerts</button>
+                <button class="md:hidden p-4" onclick="toggleSidebar('right')">✕</button>
+            </div>
+            <div id="alert-list" class="flex-1 overflow-y-auto scrollbar-aegis p-4 space-y-4">
+                <!-- Alerts rendered here -->
+            </div>
+            <div class="p-4 bg-slate-900/30">
+                <button onclick="exportSituationReport()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-[0.65rem] font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    GENERATE SITUATION REPORT
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Command Interface (Slide-out) -->
+    <div id="queryPanel" class="fixed top-0 right-0 bottom-0 w-full sm:w-[450px] glass-panel border-l border-white/10 z-[100] transform translate-x-full transition-transform duration-500 flex flex-col shadow-2xl">
+        <div class="p-6 border-b border-white/5 flex items-center justify-between">
+            <div>
+                <h2 class="text-sm font-bold tracking-widest uppercase">AEGIS Command</h2>
+                <p class="text-[0.6rem] text-sky-400 font-mono tracking-tighter">ENVIRONMENTAL INTELLIGENCE AGENT</p>
+            </div>
+            <button onclick="toggleQueryPanel()" class="text-slate-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 flex flex-col scrollbar-aegis bg-slate-900/20">
+            <div class="query-bubble ai-bubble">
+                AEGIS system initialized. I am monitoring 5 parameters across 12 primary coastal zones. What needs attention right now?
+            </div>
+        </div>
+
+        <div class="p-4 bg-slate-900/60 border-t border-white/10">
+            <div class="flex gap-2">
+                <input id="query-input" type="text" placeholder="Ask AEGIS..." class="flex-1 bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-sky-500 transition text-white">
+                <button onclick="handleQuery()" class="bg-sky-600 hover:bg-sky-500 text-white p-3 rounded-xl transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+            </div>
+            <div class="flex gap-2 mt-4 overflow-x-auto pb-2 no-scrollbar">
+                <button onclick="quickQuery('What needs attention right now?')" class="whitespace-nowrap bg-slate-800/50 hover:bg-slate-700 text-[0.6rem] px-3 py-1.5 rounded-full text-slate-300 border border-white/5">Surfaces Issues</button>
+                <button onclick="quickQuery('Analyze Sundarbans anomaly')" class="whitespace-nowrap bg-slate-800/50 hover:bg-slate-700 text-[0.6rem] px-3 py-1.5 rounded-full text-slate-300 border border-white/5">Analyze Sundarbans</button>
+                <button onclick="quickQuery('Show me thermal drift')" class="whitespace-nowrap bg-slate-800/50 hover:bg-slate-700 text-[0.6rem] px-3 py-1.5 rounded-full text-slate-300 border border-white/5">Thermal Trends</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ AEGIS CORE ENGINE ============
+        const SIGNAL_METRICS = {
+            sst: { name: 'SST', unit: '°C', weight: 0.4 },
+            chl: { name: 'Chlorophyll', unit: 'mg/m³', weight: 0.3 },
+            salinity: { name: 'Salinity', unit: 'PSU', weight: 0.1 },
+            oxygen: { name: 'Oxygen', unit: 'mg/L', weight: 0.1 },
+            ph: { name: 'pH', unit: '', weight: 0.1 }
+        };
+
+        const ZONES = [
+            { id: 'ZN-01', name: 'Sundarbans Mangroves', lat: 21.9, lng: 89.2, type: 'Estuary', baseline: 28.2, importance: 0.9 },
+            { id: 'ZN-02', name: 'Great Barrier Reef', lat: -18.2, lng: 147.6, type: 'Coral Reef', baseline: 26.5, importance: 1.0 },
+            { id: 'ZN-03', name: 'Bay of Bengal Central', lat: 15.0, lng: 88.0, type: 'Open Sea', baseline: 29.0, importance: 0.6 },
+            { id: 'ZN-04', name: 'California Current', lat: 35.0, lng: -121.0, type: 'Coastal Shelf', baseline: 14.5, importance: 0.8 },
+            { id: 'ZN-05', name: 'Coral Triangle', lat: -1.0, lng: 125.0, type: 'Coral Reef', baseline: 29.5, importance: 1.0 },
+            { id: 'ZN-06', name: 'Mediterranean-N', lat: 42.0, lng: 6.0, type: 'Coastal', baseline: 21.0, importance: 0.7 }
+        ];
+
+        let map, trendChart, zoneData = {};
+        let sidebars = { left: false, right: false };
+        let drawMode = false;
+        let timeOffset = 0;
+        let markers = {};
+
+        // ============ INITIALIZATION ============
+        window.onload = function() {
+            initMap();
+            initCharts();
+            generateMockData();
+            processIntelligence();
+            startSimulation();
+
+            document.getElementById('query-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleQuery();
+            });
+        };
+
+        function initMap() {
+            // LOCKING THE MAP: WorldCopyJump false and maxBounds
+            const bounds = L.latLngBounds(L.latLng(-85, -180), L.latLng(85, 180));
+            
+            map = L.map('map', { 
+                center: [15, 80], 
+                zoom: 3, 
+                minZoom: 2,
+                maxZoom: 12,
+                zoomControl: false, 
+                attributionControl: false,
+                worldCopyJump: false,
+                maxBounds: bounds,
+                maxBoundsViscosity: 1.0
+            });
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                noWrap: true, // PREVENTS STRIPPING
+                bounds: bounds
+            }).addTo(map);
+
+            ZONES.forEach(zone => {
+                const icon = L.divIcon({
+                    className: 'custom-icon',
+                    html: `<div id="marker-${zone.id}" class="status-dot dot-green w-3 h-3 rounded-full border border-white/20"></div>`,
+                    iconSize: [12, 12]
+                });
+                const marker = L.marker([zone.lat, zone.lng], { icon }).addTo(map)
+                    .bindPopup(`<div class="p-2 text-xs text-slate-800"><b>${zone.name}</b><br>${zone.type}</div>`);
+                markers[zone.id] = marker;
+            });
+
+            map.on('click', onMapClick);
+        }
+
+        function initCharts() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['SST', 'CHL', 'SAL', 'OXY', 'pH'],
+                    datasets: [{
+                        label: 'Deviation',
+                        data: [12, 15, 14, 25, 10],
+                        backgroundColor: '#0ea5e9',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 9 } } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { size: 9 } } }
+                    }
+                }
+            });
+        }
+
+        function generateMockData() {
+            ZONES.forEach(z => {
+                zoneData[z.id] = {
+                    history: {
+                        sst: Array.from({length: 60}, (_, i) => z.baseline + (Math.random() - 0.5) * 2 + (i > 55 ? 2.5 : 0)),
+                        chl: Array.from({length: 60}, (_, i) => 5 + Math.random() * 5 + (i > 50 ? 10 : 0)),
+                        salinity: Array.from({length: 60}, () => 35 + Math.random()),
+                        oxygen: Array.from({length: 60}, () => 6 + Math.random()),
+                        ph: Array.from({length: 60}, () => 8.1 + (Math.random() - 0.5) * 0.1)
+                    }
+                };
+            });
+        }
+
+        // ============ AI ENGINE LOGIC ============
+        function processIntelligence() {
+            const rankedAnomalies = [];
+            const dataIndex = 59 - parseInt(timeOffset);
+            
+            ZONES.forEach(zone => {
+                const data = zoneData[zone.id].history;
+                const scores = {};
+                let converging = 0;
+
+                Object.keys(SIGNAL_METRICS).forEach(sig => {
+                    const series = data[sig];
+                    const current = series[dataIndex];
+                    const prevAvg = series.slice(0, dataIndex - 5).reduce((a,b) => a+b, 0) / (dataIndex - 5 || 1);
+                    const deviation = current - prevAvg;
+                    const magnitude = Math.abs(deviation) / (prevAvg * 0.1);
+                    
+                    const recency = 1.0; 
+                    const trend = deviation > 0 ? 1.0 : 0.5;
+                    
+                    const pScore = (recency * 0.3) + (Math.min(1, magnitude) * 0.4) + (trend * 0.2) + (zone.importance * 0.1);
+                    scores[sig] = pScore;
+                    if (pScore > 0.6) converging++;
+                });
+
+                const totalScore = Object.values(scores).reduce((a,b) => a+b, 0) / 5;
+                const tier = totalScore > 0.75 ? 1 : totalScore > 0.5 ? 2 : 3;
+
+                rankedAnomalies.push({ zone, totalScore, tier, scores, converging });
+                updateMapMarker(zone.id, tier);
+            });
+
+            renderZoneUI(rankedAnomalies);
+            renderAlertUI(rankedAnomalies);
+            updateGlobalStats(rankedAnomalies);
+            updateParameterChart(rankedAnomalies[0]); // Default to first zone for chart
+        }
+
+        function updateMapMarker(zoneId, tier) {
+            const el = document.getElementById(`marker-${zoneId}`);
+            if (!el) return;
+            el.className = `status-dot w-3 h-3 rounded-full border border-white/20 ${tier === 1 ? 'dot-red' : tier === 2 ? 'dot-amber' : 'dot-green'}`;
+        }
+
+        function renderZoneUI(anomalies) {
+            const container = document.getElementById('zone-list');
+            container.innerHTML = anomalies.sort((a,b) => b.totalScore - a.totalScore).map(a => `
+                <div class="glass-card rounded-xl p-3 cursor-pointer group hover:bg-slate-800/60" onclick="focusOnZone('${a.zone.lat}', '${a.zone.lng}', '${a.zone.id}')">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[0.65rem] font-bold">${a.zone.name}</span>
+                        <span class="text-[0.6rem] mono ${a.tier === 1 ? 'text-red-400' : 'text-slate-500'}">${(a.totalScore * 100).toFixed(0)}% PRIO</span>
+                    </div>
+                    <div class="flex gap-1">
+                        <div class="h-1 flex-1 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-sky-500" style="width: ${a.totalScore * 100}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAlertUI(anomalies) {
+            const container = document.getElementById('alert-list');
+            const sorted = anomalies.filter(a => a.tier < 3).sort((a,b) => b.totalScore - a.totalScore);
+            
+            container.innerHTML = sorted.map(a => `
+                <div class="glass-card rounded-xl p-4 alert-tier-${a.tier} shadow-xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[0.6rem] font-bold text-slate-400 uppercase tracking-tighter">${a.zone.name}</span>
+                        <span class="text-[0.55rem] mono ${a.tier === 1 ? 'text-red-400' : 'text-amber-400'}">TIER ${a.tier}</span>
+                    </div>
+                    <h4 class="text-xs font-bold uppercase mb-2">${a.tier === 1 ? 'Convergent Crisis' : 'Monitoring Watch'}</h4>
+                    <p class="text-[0.65rem] text-slate-400 leading-relaxed mb-3">
+                        ${a.converging} converging signals detected. Significant drift in multiple parameters. Historical drift weighting is high.
+                    </p>
+                    <div class="flex items-center justify-between pt-3 border-t border-white/5">
+                        <span class="text-[0.6rem] font-bold text-sky-400">REC: DEPLOY SENSORS</span>
+                        <span class="text-[0.5rem] text-slate-500 mono">CONF: 88%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateGlobalStats(anomalies) {
+            const avg = (anomalies.reduce((a,b) => a + b.totalScore, 0) / anomalies.length) * 100;
+            document.getElementById('global-idx').textContent = avg.toFixed(1) + '%';
+            document.getElementById('global-bar').style.width = avg + '%';
+            
+            const criticalCount = anomalies.filter(a => a.tier === 1).length;
+            document.getElementById('ai-summary').textContent = `System identifies ${criticalCount} critical convergences. ${timeOffset > 0 ? `Historical data showing persistent drift from ${timeOffset} days ago.` : 'Real-time drift detected in primary sectors.'}`;
+        }
+
+        function updateParameterChart(anomaly) {
+            if (!anomaly) return;
+            const values = Object.values(anomaly.scores).map(v => v * 100);
+            trendChart.data.datasets[0].data = values;
+            trendChart.update();
+        }
+
+        // ============ INTERACTION HANDLERS ============
+        function toggleSidebar(side) {
+            const el = document.getElementById(`sidebar-${side}`);
+            sidebars[side] = !sidebars[side];
+            el.style.transform = sidebars[side] ? 'translateX(0)' : (side === 'left' ? 'translateX(-100%)' : 'translateX(100%)');
+        }
+
+        function toggleQueryPanel() {
+            const panel = document.getElementById('queryPanel');
+            const isOpen = panel.style.transform === 'translateX(0%)';
+            panel.style.transform = isOpen ? 'translateX(100%)' : 'translateX(0%)';
+        }
+
+        function focusOnZone(lat, lng, id) {
+            map.flyTo([lat, lng], 6);
+            if (window.innerWidth < 768) toggleSidebar('left');
+            // Update chart for specific zone
+            const dataIndex = 59 - parseInt(timeOffset);
+            // Simulate anomaly object for the chart update
+            processIntelligence(); 
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const icon = document.getElementById('theme-icon');
+            if (document.body.classList.contains('light-mode')) {
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M17.636 17.636l-.707-.707M6.364 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />';
+            } else {
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />';
+            }
+        }
+
+        function toggleDrawMode() {
+            drawMode = !drawMode;
+            document.getElementById('draw-btn').classList.toggle('bg-sky-600');
+            document.getElementById('draw-btn').classList.toggle('bg-slate-800');
+            document.getElementById('draw-btn').textContent = drawMode ? 'CLICK MAP TO MONITOR' : 'DEFINE CUSTOM ZONE';
+        }
+
+        function onMapClick(e) {
+            if (!drawMode) return;
+            const { lat, lng } = e.latlng;
+            const id = 'CUSTOM-' + Date.now();
+            const newZone = { id, name: 'User-Defined Area', lat, lng, type: 'Custom', baseline: 25.0, importance: 0.5 };
+            ZONES.push(newZone);
+            
+            // Generate data for new zone
+            zoneData[id] = {
+                history: {
+                    sst: Array.from({length: 60}, () => 25 + Math.random()),
+                    chl: Array.from({length: 60}, () => 5 + Math.random()),
+                    salinity: Array.from({length: 60}, () => 35),
+                    oxygen: Array.from({length: 60}, () => 6),
+                    ph: Array.from({length: 60}, () => 8.1)
+                }
+            };
+
+            const icon = L.divIcon({
+                className: 'custom-icon',
+                html: `<div id="marker-${id}" class="status-dot dot-green w-3 h-3 rounded-full border border-white/20"></div>`,
+                iconSize: [12, 12]
+            });
+            L.marker([lat, lng], { icon }).addTo(map)
+                .bindPopup(`<div class="p-2 text-xs text-slate-800"><b>${newZone.name}</b><br>Manual Monitor</div>`);
+            
+            toggleDrawMode();
+            processIntelligence();
+        }
+
+        function handleTimeTravel(val) {
+            timeOffset = val;
+            document.getElementById('time-val').textContent = val == 0 ? 'REALTIME' : `T-${val} Days`;
+            document.getElementById('time-label').textContent = val == 0 ? 'Current Data' : 'Historical Snapshot';
+            processIntelligence();
+        }
+
+        function exportSituationReport() {
+            const criticals = ZONES.filter(z => {
+                // Simplified check for export logic
+                return Math.random() > 0.8;
+            });
+            
+            const report = {
+                timestamp: new Date().toISOString(),
+                global_index: document.getElementById('global-idx').textContent,
+                monitored_zones: ZONES.length,
+                status: "CRITICAL",
+                summary: document.getElementById('ai-summary').textContent
+            };
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(report, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "aegis_situation_report.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function handleQuery() {
+            const input = document.getElementById('query-input');
+            const container = document.getElementById('chat-container');
+            const val = input.value.trim();
+            if (!val) return;
+
+            addBubble(val, 'user');
+            input.value = '';
+
+            setTimeout(() => {
+                const response = getAIResponse(val);
+                addBubble(response, 'ai');
+            }, 600);
+        }
+
+        function addBubble(text, type) {
+            const container = document.getElementById('chat-container');
+            const div = document.createElement('div');
+            div.className = `query-bubble ${type}-bubble`;
+            div.innerHTML = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function getAIResponse(q) {
+            const ql = q.toLowerCase();
+            if (ql.includes('attention')) {
+                return `**SITUATIONAL AWARENESS REPORT:** <br><br> Analyzed ${ZONES.length} zones. High risk detected in Great Barrier Reef and Sundarbans. <br><br> Use the **Time Slider** to verify if this drift began more than 7 days ago.`;
+            }
+            return `Command received. Querying database for ${ql}. All systems are active. Anomaly detection thresholds are currently set to 1.5σ.`;
+        }
+
+        function quickQuery(text) {
+            document.getElementById('query-input').value = text;
+            handleQuery();
+        }
+
+        function startSimulation() {
+            setInterval(() => {
+                if (timeOffset == 0) {
+                    ZONES.forEach(z => {
+                        zoneData[z.id].history.sst.push(zoneData[z.id].history.sst[zoneData[z.id].history.sst.length-1] + (Math.random() - 0.5) * 0.5);
+                        zoneData[z.id].history.sst.shift();
+                    });
+                    processIntelligence();
+                }
+            }, 8000);
+        }
+
+    </script>
+</body>
+</html>
